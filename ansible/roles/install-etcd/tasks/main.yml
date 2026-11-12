@@ -1,0 +1,98 @@
+- name: Create etcd group 
+  ansible.builtin.group:
+    name: etcd
+    state: present
+  tags:
+    - install-etcd
+
+- name: Add the user 'etcd' with a primary group of 'etcd'
+  ansible.builtin.user:
+    name: etcd
+    group: etcd
+    system: true
+    shell: /sbin/nologin
+  tags:
+    - install-etcd
+
+- name: Permit traffic in default zone on port 2379/tcp and 2380/tcp
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  with_items:
+    - 2379/tcp
+    - 2380/tcp
+  tags:
+    - install-etcd
+
+- name: Create directories for etcd
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: etcd
+    group: etcd
+    state: directory
+  with_items:
+      - /var/lib/etcd
+      - /etc/etcd
+  tags:
+    - install-etcd
+
+- name: Download etcd archive
+  ansible.builtin.get_url:
+    url: https://github.com/etcd-io/etcd/releases/download/v3.7.3/etcd-v3.7.3-linux-arm64.tar.gz
+    dest: /tmp/
+  tags:
+    - install-etcd
+
+- name: Unarchive etcd archive
+  ansible.builtin.unarchive:
+    src: /tmp/etcd-v3.7.3-linux-arm64.tar.gz
+    dest: /tmp/
+    remote_src: yes
+  tags:
+    - install-etcd
+
+- name: Copy etcd binaries
+  ansible.builtin.copy:
+    src: "/tmp/etcd-v3.7.3-linux-arm64/{{ item }}"
+    dest: /usr/local/bin/
+    owner: etcd
+    group: etcd
+    mode: 0755
+    remote_src: true
+  with_items:
+    - etcd
+    - etcdctl
+    - etcdutl
+  tags:
+    - install-etcd
+
+- name: Upload etcd configuration
+  ansible.builtin.template:
+    src: templates/etcd.conf.j2
+    dest: /etc/etcd/etcd.conf
+    owner: etcd
+    group: etcd
+    mode: 0644
+  tags:
+    - install-etcd
+
+- name: Upload unit file for etcd
+  ansible.builtin.copy:
+    src: files/etcd.service
+    dest: /usr/lib/systemd/system/
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - install-etcd
+
+- name: Make sure a service unit is running
+  ansible.builtin.systemd_service:
+    state: started
+    enabled: true
+    daemon_reload: true
+    name: etcd
+  tags:
+    - install-etcd

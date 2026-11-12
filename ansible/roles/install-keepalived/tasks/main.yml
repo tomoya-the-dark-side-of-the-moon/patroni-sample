@@ -1,0 +1,33 @@
+- name: Install keepalived
+  ansible.builtin.dnf:
+    name: keepalived
+    state: present
+  tags:
+    - install-keepalived
+
+- name: Permit VRRP
+  ansible.posix.firewalld:
+    rich_rule: rule protocol value="vrrp" accept
+    state: enabled
+    permanent: true
+    immediate: true
+  tags:
+    - install-keepalived
+
+- name: Upload keepalived.conf
+  ansible.builtin.template:
+    src: templates/keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - install-keepalived
+
+- name: Start keepalived
+  ansible.builtin.systemd_service:
+    name: keepalived
+    state: restarted
+    enabled: true
+  tags:
+    - install-keepalived

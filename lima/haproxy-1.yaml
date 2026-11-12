@@ -1,0 +1,63 @@
+# postgresql-1: AlmaLinux (最新: 10系) on Apple Silicon (M3)
+#
+# 起動: limactl start --name=postgresql-1 ./postgresql-1.yaml
+# 接続: ssh <macのユーザー名>@192.168.105.51   /   psql -h 192.168.105.51 -U postgres
+minimumLimaVersion: 2.0.0
+
+# AlmaLinux 10 の公式 GenericCloud イメージ (Lima 同梱テンプレート) を利用
+base:
+- template:_images/almalinux-10
+- template:_default/mounts
+
+# M3 では Apple Virtualization.framework (vz) で aarch64 をネイティブ実行
+vmType: vz
+arch: aarch64
+
+cpus: 2
+memory: 4GiB
+disk: 30GiB
+
+# lima: shared (socket_vmnet) でホスト<->VM、VM<->VM の通信を有効化
+# 固定MACアドレスに対して NetworkManager で静的IPを設定する
+# インターネットへは組み込みのユーザーモードネットワーク (eth0) 経由で出る
+networks:
+- lima: shared
+  macAddress: "52:55:55:00:00:54"
+
+provision:
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux
+    NM_FILE="/etc/NetworkManager/system-connections/lima-static.nmconnection"
+    cat > "${NM_FILE}" << 'NMEOF'
+    [connection]
+    id=lima-static
+    type=ethernet
+    autoconnect=true
+
+    [ethernet]
+    mac-address=52:55:55:00:00:54
+
+    [ipv4]
+    method=manual
+    addresses=192.168.105.54/24
+    gateway=192.168.105.1
+    # このネットワークはホスト<->VM間の直接通信専用。
+    # デフォルトルート/DNS は組み込みネットワーク側 (metric 200) を使わせる
+    never-default=true
+    route-metric=300
+
+    [ipv6]
+    method=ignore
+    addr-gen-mode=default
+    NMEOF
+    chmod 600 "${NM_FILE}"
+    nmcli connection reload
+    for i in $(seq 1 10); do
+      nmcli connection up lima-static && break || sleep 3
+    done
+
+ssh:
+  # host の ~/.ssh/*.pub も VM に登録し、`ssh user@IP` で鍵認証できるようにする
+  loadDotSSHPubKeys: true

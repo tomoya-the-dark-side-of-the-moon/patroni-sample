@@ -1,0 +1,14 @@
+- name: Install the latest version of firewalld
+  ansible.builtin.dnf:
+    name: firewalld
+    state: latest
+  tags:
+    - install-firewalld
+
+- name: Make sure a service unit is running
+  ansible.builtin.systemd_service:
+    state: started
+    enabled: true
+    name: firewalld
+  tags:
+    - install-firewalld

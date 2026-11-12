@@ -1,0 +1,29 @@
+- hosts: all
+  remote_user: lima
+  gather_facts: true
+  become: true
+  become_method: sudo
+  roles:
+    - upgrade-all-packages
+    - install-development-tools
+    - install-firewalld
+    - install-python3-pip
+
+- hosts: postgresql
+  remote_user: lima
+  gather_facts: true
+  become: true
+  become_method: sudo
+  roles:
+    - install-postgresql
+    - install-etcd
+    - install-patroni
+
+- hosts: haproxy
+  remote_user: lima
+  gather_facts: true
+  become: true
+  become_method: sudo
+  roles:
+    - install-haproxy
+    - install-keepalived

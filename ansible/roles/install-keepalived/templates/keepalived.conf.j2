@@ -1,0 +1,37 @@
+global_defs {
+    router_id {{ ansible_hostname }}
+}
+
+vrrp_track_process track_haproxy {
+    process haproxy
+    quorum 1
+    delay 2
+}
+
+vrrp_instance VI_HAPROXY {
+    {% if inventory_hostname in groups['haproxy_1'] %}
+    state MASTER
+    priority 101
+    {% else %}
+    state BACKUP
+    priority 100
+    {% endif %}
+    interface {{ keepalived_interface }}
+    virtual_router_id {{ keepalived_router_id }}
+    advert_int 1
+
+    unicast_src_ip {{ ansible_host }}
+    unicast_peer {
+        {% for h in groups['haproxy'] if h != inventory_hostname %}
+        {{ h }}
+        {% endfor %}
+    }
+
+    virtual_ipaddress {
+        {{ keepalived_vip }}/24 dev {{ keepalived_interface }}
+    }
+
+    track_process {
+        track_haproxy
+    }
+}

@@ -1,0 +1,52 @@
+scope: pg-cluster
+namespace: /service/
+name: {{ ansible_hostname }}
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: {{ ansible_host }}:8008
+
+etcd3:
+  hosts:
+    - 192.168.105.51:2379
+    - 192.168.105.52:2379
+    - 192.168.105.53:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+          wal_level: replica
+          hot_standby: "on"
+          max_wal_senders: 10
+          max_replication_slots: 10
+          wal_log_hints: "on"
+      pg_hba:
+        - local all all peer
+        - host all all 127.0.0.1/32 scram-sha-256
+        - host replication replicator 192.168.105.0/24 scram-sha-256
+        - host all all 192.168.105.0/24 scram-sha-256
+  initdb:
+    - encoding: UTF8
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: {{ ansible_host }}:5432
+  data_dir: /var/lib/pgsql/18/data
+  bin_dir: /usr/bin
+  pgpass: /var/lib/pgsql/.pgpass_patroni
+  authentication:
+    superuser:
+      username: postgres
+      password: "{{ patroni_superuser_password }}"
+    replication:
+      username: replicator
+      password: "{{ patroni_replication_password }}"
+  parameters:
+    unix_socket_directories: /run/postgresql

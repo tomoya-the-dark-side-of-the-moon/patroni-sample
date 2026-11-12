@@ -1,0 +1,43 @@
+- name: Install HAProxy
+  ansible.builtin.dnf:
+    name: haproxy
+    state: present
+  tags:
+    - install-haproxy
+
+- name: Permit haproxy ports
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  with_items: 
+    - 5000/tcp
+    - 5001/tcp
+    - 7000/tcp
+  tags:
+    - install-haproxy
+
+- name: Allow haproxy to connect to any port (SELinux)
+  ansible.posix.seboolean:
+    name: haproxy_connect_any
+    state: true
+    persistent: true
+  tags:
+    - install-haproxy
+
+- name: Upload haproxy.cfg
+  ansible.builtin.template:
+    src: templates/haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    validate: haproxy -c -f %s
+  tags:
+    - install-haproxy
+
+- name: Start haproxy
+  ansible.builtin.systemd_service:
+    name: haproxy
+    state: restarted
+    enabled: true
+  tags:
+    - install-haproxy

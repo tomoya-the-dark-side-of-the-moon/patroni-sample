@@ -1,0 +1,13 @@
+- name: Install the latest version of python3-pip
+  ansible.builtin.dnf:
+    name: python3-pip
+    state: latest
+  tags:
+    - install-python3-pip
+
+- name: Install python3-packaging (required by ansible.builtin.pip)
+  ansible.builtin.dnf:
+    name: python3-packaging
+    state: present
+  tags:
+    - install-python3-pip

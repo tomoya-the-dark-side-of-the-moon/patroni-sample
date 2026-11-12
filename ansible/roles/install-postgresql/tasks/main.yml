@@ -1,0 +1,17 @@
+- name: Install PostgreSQL
+  ansible.builtin.dnf:
+    name:
+      - postgresql18
+      - postgresql18-server
+    state: present
+  tags:
+    - install-postgresql
+
+- name: Permit traffic in default zone on port 5432/tcp
+  ansible.posix.firewalld:
+    port: 5432/tcp
+    state: enabled
+    permanent: true
+    immediate: true
+  tags:
+    - install-postgresql
