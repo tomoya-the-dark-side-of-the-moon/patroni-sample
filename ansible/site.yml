@@ -1,5 +1,4 @@
 - hosts: all
-  remote_user: lima
   gather_facts: true
   become: true
   become_method: sudo
