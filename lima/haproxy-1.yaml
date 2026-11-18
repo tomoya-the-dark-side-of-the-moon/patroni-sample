@@ -9,8 +9,7 @@ base:
 - template:_images/almalinux-10
 - template:_default/mounts
 
-# M3 では Apple Virtualization.framework (vz) で aarch64 をネイティブ実行
-vmType: vz
+vmType: qemu
 arch: aarch64
 
 cpus: 2
@@ -61,3 +60,4 @@ provision:
 ssh:
   # host の ~/.ssh/*.pub も VM に登録し、`ssh user@IP` で鍵認証できるようにする
   loadDotSSHPubKeys: true
+  localPort: 60004
