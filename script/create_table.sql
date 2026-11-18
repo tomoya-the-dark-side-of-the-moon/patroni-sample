@@ -1,4 +1,4 @@
 CREATE TABLE member (
     id INTEGER NOT NULL PRIMARY KEY,
     name VARCHAR(20) NOT NULL
-)
+);
