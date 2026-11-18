@@ -8,7 +8,7 @@
 - name: Install patroni python package
   ansible.builtin.pip:
     name: "patroni[etcd3]"
-    state: present
+    state: latest
   tags:
     - install-patroni
 
